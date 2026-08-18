@@ -1,2 +1,17 @@
 *.md
 !README.md
+
+# Terraform local artifacts — never the provider cache or local plan/state
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
