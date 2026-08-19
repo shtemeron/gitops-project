@@ -16,11 +16,20 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+# Split the VPC CIDR in half by tier first, then carve /24s within each half —
+# public and private live in structurally separate address ranges (10.0.0.0/17
+# vs 10.0.128.0/17), not just offset indexes into the same flat range. Each
+# tier has 128 possible /24s of independent room to grow.
+locals {
+  public_cidr  = cidrsubnet(var.vpc_cidr, 1, 0)
+  private_cidr = cidrsubnet(var.vpc_cidr, 1, 1)
+}
+
 # Public subnets: bastion (this stage) + the app's public LB in Stage 6.
 resource "aws_subnet" "public" {
   count                   = length(var.availability_zones)
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
+  cidr_block              = cidrsubnet(local.public_cidr, 7, count.index)
   availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = true
 
@@ -34,7 +43,7 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   count             = length(var.availability_zones)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + length(var.availability_zones))
+  cidr_block        = cidrsubnet(local.private_cidr, 7, count.index)
   availability_zone = var.availability_zones[count.index]
 
   tags = {
