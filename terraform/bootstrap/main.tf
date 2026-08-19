@@ -10,6 +10,8 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
+  # No hardcoded profile — portable across machines. Set AWS_PROFILE (or any
+  # standard AWS credential env vars) in the shell before running this.
 }
 
 data "aws_caller_identity" "current" {}

@@ -20,7 +20,7 @@ resource "aws_key_pair" "bastion" {
 
 resource "aws_security_group" "bastion" {
   name        = "${var.project_name}-bastion"
-  description = "Bastion — SSH from a known CIDR only"
+  description = "Bastion - SSH access (key-pair auth only)"
   vpc_id      = aws_vpc.main.id
 
   ingress {

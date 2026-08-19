@@ -151,6 +151,27 @@ resource "aws_eks_access_policy_association" "bastion_admin" {
   }
 }
 
+# --- Access entry: whoever applies this Terraform gets cluster-admin too —
+# covers AWS Console visibility (Nodes/Workloads tabs need K8s-level RBAC,
+# not just IAM) and any direct kubectl usage outside the bastion. Uses the
+# caller's identity dynamically rather than a hardcoded ARN, so this stays
+# correct for whoever actually runs `terraform apply`, not just this account ---
+
+resource "aws_eks_access_entry" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = data.aws_caller_identity.current.arn
+}
+
+resource "aws_eks_access_policy_association" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = data.aws_caller_identity.current.arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
+
 # --- Allow the bastion to reach the private API endpoint on 443 ---
 
 resource "aws_security_group_rule" "cluster_from_bastion" {

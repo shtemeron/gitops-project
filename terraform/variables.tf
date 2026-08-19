@@ -8,6 +8,12 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "aws_profile" {
+  type        = string
+  default     = ""
+  description = "Local AWS CLI profile name to use, if any. Empty by default (falls through to the standard AWS credential chain — env vars, AWS_PROFILE, an EC2/CI instance role) so this stays portable across machines. Set in terraform.tfvars, not here, if you want a specific profile picked automatically on this machine."
+}
+
 variable "vpc_cidr" {
   type    = string
   default = "10.0.0.0/16"
