@@ -89,7 +89,7 @@ resource "aws_iam_role_policy_attachment" "bastion_read_only" {
 # ESO IRSA role) — not arbitrary IAM in the account.
 data "aws_iam_policy_document" "bastion_terraform_write" {
   statement {
-    actions = ["s3:GetObject", "s3:PutObject"]
+    actions = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
     resources = [
       "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/*",
     ]
