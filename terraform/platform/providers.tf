@@ -17,9 +17,9 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "~> 1.14"
     }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.11"
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
     }
   }
 }

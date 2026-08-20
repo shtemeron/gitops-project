@@ -61,14 +61,16 @@ resource "helm_release" "eso" {
 }
 
 # helm_release reports done once Helm submits the install — the API
-# server's discovery cache can lag a few seconds behind actually
-# recognizing the CRDs that install just created. Without this, applying
-# the ClusterSecretStore right after can race that gap and fail with
-# "isn't valid for cluster" even though the chart install genuinely
-# succeeded.
-resource "time_sleep" "wait_for_eso_crds" {
-  create_duration = "20s"
-  depends_on      = [helm_release.eso]
+# server's discovery cache can lag behind actually recognizing the CRDs
+# that install just created, by a variable amount (a fixed sleep proved
+# unreliable in practice — 20s wasn't always enough). Actively wait until
+# the CRD is genuinely Established instead of guessing a delay.
+resource "null_resource" "wait_for_eso_crds" {
+  depends_on = [helm_release.eso]
+
+  provisioner "local-exec" {
+    command = "kubectl wait --for=condition=Established --timeout=120s crd/clustersecretstores.external-secrets.io"
+  }
 }
 
 # --- Tells ESO how to reach AWS Secrets Manager ---
@@ -98,5 +100,5 @@ resource "kubectl_manifest" "cluster_secret_store" {
     }
   })
 
-  depends_on = [time_sleep.wait_for_eso_crds]
+  depends_on = [null_resource.wait_for_eso_crds]
 }
