@@ -6,16 +6,16 @@ data "aws_iam_policy_document" "eso_assume" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+      identifiers = [data.terraform_remote_state.infra.outputs.oidc_provider_arn]
     }
     condition {
       test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub"
+      variable = "${replace(data.terraform_remote_state.infra.outputs.oidc_provider_url, "https://", "")}:sub"
       values   = ["system:serviceaccount:external-secrets:external-secrets"]
     }
     condition {
       test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud"
+      variable = "${replace(data.terraform_remote_state.infra.outputs.oidc_provider_url, "https://", "")}:aud"
       values   = ["sts.amazonaws.com"]
     }
   }
@@ -30,7 +30,7 @@ resource "aws_iam_role" "eso" {
 data "aws_iam_policy_document" "eso_secrets" {
   statement {
     actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
-    resources = [aws_secretsmanager_secret.db_credentials.arn]
+    resources = [data.terraform_remote_state.infra.outputs.db_credentials_secret_arn]
   }
 }
 
@@ -58,8 +58,17 @@ resource "helm_release" "eso" {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.eso.arn
   }
+}
 
-  depends_on = [aws_eks_node_group.main]
+# helm_release reports done once Helm submits the install — the API
+# server's discovery cache can lag a few seconds behind actually
+# recognizing the CRDs that install just created. Without this, applying
+# the ClusterSecretStore right after can race that gap and fail with
+# "isn't valid for cluster" even though the chart install genuinely
+# succeeded.
+resource "time_sleep" "wait_for_eso_crds" {
+  create_duration = "20s"
+  depends_on      = [helm_release.eso]
 }
 
 # --- Tells ESO how to reach AWS Secrets Manager ---
@@ -89,5 +98,5 @@ resource "kubectl_manifest" "cluster_secret_store" {
     }
   })
 
-  depends_on = [helm_release.eso]
+  depends_on = [time_sleep.wait_for_eso_crds]
 }

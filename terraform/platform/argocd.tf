@@ -4,8 +4,6 @@ resource "helm_release" "argocd" {
   chart            = "argo-cd"
   namespace        = "argocd"
   create_namespace = true
-
-  depends_on = [aws_eks_node_group.main]
 }
 
 # App-of-Apps root — the one manual/imperative apply in the whole system

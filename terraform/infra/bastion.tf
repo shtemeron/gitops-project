@@ -73,25 +73,37 @@ resource "aws_iam_role_policy" "bastion_eks_describe" {
   policy = data.aws_iam_policy_document.bastion_eks_describe.json
 }
 
-# From Stage 3 on, `terraform apply` runs from the bastion against the same
-# state as everything else — refreshing that state means reading every
-# existing resource, not just the new ones this stage creates. Broad
-# read-only access (AWS managed ReadOnlyAccess) covers that refresh; actual
-# write/create permission stays narrowly scoped below, so a compromised
-# bastion can see the account but can't mutate anything outside its lane.
+# NOTE: the bastion intentionally gets NO permission here to manage its own
+# IAM role, security group, EC2 instance, or anything else infra/ creates.
+# It only ever needs to READ/WRITE the platform/ state and manage the
+# platform-specific resources it applies — see the state-access + IAM
+# policy below. It never touches infra/ resources at all, by design: this
+# is what stops the bastion from ever being able to destroy its own
+# permissions mid-operation again (see ROADMAP.md's Stage 3 postmortem).
 resource "aws_iam_role_policy_attachment" "bastion_read_only" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
-# Write access, narrowly scoped: the Terraform state object itself, and IAM
-# role management restricted to roles this project creates (e.g. Stage 3's
-# ESO IRSA role) — not arbitrary IAM in the account.
+# Write access, narrowly scoped: the platform/ state object (not infra/'s),
+# and IAM role management restricted to roles this project's platform/
+# config creates (ESO's IRSA role) — not arbitrary IAM in the account, and
+# not infra/'s own state or resources.
 data "aws_iam_policy_document" "bastion_terraform_write" {
   statement {
     actions = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
     resources = [
-      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/*",
+      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/gitops-project/platform/*",
+    ]
+  }
+
+  # Read-only on infra/'s state — needed for platform/'s terraform_remote_state
+  # lookup (cluster endpoint, OIDC provider, secret ARN, etc.). Never write:
+  # the bastion never applies infra/ itself.
+  statement {
+    actions = ["s3:GetObject"]
+    resources = [
+      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/gitops-project/infra/*",
     ]
   }
 
@@ -109,6 +121,7 @@ data "aws_iam_policy_document" "bastion_terraform_write" {
       "iam:DetachRolePolicy",
       "iam:ListRolePolicies",
       "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
     ]
     resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"]
   }

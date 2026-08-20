@@ -151,20 +151,20 @@ resource "aws_eks_access_policy_association" "bastion_admin" {
   }
 }
 
-# --- Access entry: whoever applies this Terraform gets cluster-admin too —
+# --- Access entry: the human operator's IAM user gets cluster-admin too —
 # covers AWS Console visibility (Nodes/Workloads tabs need K8s-level RBAC,
-# not just IAM) and any direct kubectl usage outside the bastion. Uses the
-# caller's identity dynamically rather than a hardcoded ARN, so this stays
-# correct for whoever actually runs `terraform apply`, not just this account ---
+# not just IAM) and any direct kubectl usage outside the bastion. Pinned to
+# a stable principal, not a caller-derived one — see the bastion/laptop
+# dual-identity note in ROADMAP.md's Stage 3 entry for why that matters ---
 
 resource "aws_eks_access_entry" "admin" {
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = data.aws_caller_identity.current.arn
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/admin"
 }
 
 resource "aws_eks_access_policy_association" "admin" {
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = data.aws_caller_identity.current.arn
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/admin"
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {

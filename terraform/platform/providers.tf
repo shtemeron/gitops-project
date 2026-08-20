@@ -5,10 +5,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
-    }
     helm = {
       source  = "hashicorp/helm"
       version = "~> 2.0"
@@ -20,6 +16,10 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = "~> 1.14"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
     }
   }
 }
@@ -37,18 +37,21 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-# helm/kubernetes/kubectl all talk to the same private EKS API endpoint —
-# only reachable from inside the VPC, so this stage's apply must run from
-# the bastion. Auth is exec-based via `aws eks get-token`, the same
-# mechanism kubectl itself uses; needs no extra IAM permission for the
-# token call, only the eks:DescribeCluster the bastion already has.
+# All three of these talk to the private EKS API endpoint — only reachable
+# from inside the VPC, so this config's apply must run from the bastion.
+# Auth is exec-based via `aws eks get-token`, same mechanism kubectl itself
+# uses; needs no extra IAM permission for the token call.
 locals {
-  eks_token_args = ["eks", "get-token", "--cluster-name", aws_eks_cluster.main.name, "--region", var.aws_region]
+  eks_token_args = [
+    "eks", "get-token",
+    "--cluster-name", data.terraform_remote_state.infra.outputs.eks_cluster_name,
+    "--region", var.aws_region,
+  ]
 }
 
 provider "kubernetes" {
-  host                   = aws_eks_cluster.main.endpoint
-  cluster_ca_certificate = base64decode(aws_eks_cluster.main.certificate_authority[0].data)
+  host                   = data.terraform_remote_state.infra.outputs.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(data.terraform_remote_state.infra.outputs.eks_cluster_ca_certificate)
 
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
@@ -59,8 +62,8 @@ provider "kubernetes" {
 
 provider "helm" {
   kubernetes {
-    host                   = aws_eks_cluster.main.endpoint
-    cluster_ca_certificate = base64decode(aws_eks_cluster.main.certificate_authority[0].data)
+    host                   = data.terraform_remote_state.infra.outputs.eks_cluster_endpoint
+    cluster_ca_certificate = base64decode(data.terraform_remote_state.infra.outputs.eks_cluster_ca_certificate)
 
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
@@ -71,8 +74,8 @@ provider "helm" {
 }
 
 provider "kubectl" {
-  host                   = aws_eks_cluster.main.endpoint
-  cluster_ca_certificate = base64decode(aws_eks_cluster.main.certificate_authority[0].data)
+  host                   = data.terraform_remote_state.infra.outputs.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(data.terraform_remote_state.infra.outputs.eks_cluster_ca_certificate)
   load_config_file       = false
 
   exec {
