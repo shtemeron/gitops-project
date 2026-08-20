@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket       = "gitops-project-tfstate-100282333708"
-    key          = "gitops-project/platform-operators/terraform.tfstate"
+    key          = "gitops-project/platform/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
     use_lockfile = true

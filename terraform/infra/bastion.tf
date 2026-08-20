@@ -85,16 +85,15 @@ resource "aws_iam_role_policy_attachment" "bastion_read_only" {
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
-# Write access, narrowly scoped: the platform-operators/ and
-# platform-config/ state objects (not infra/'s), and IAM role management
-# restricted to roles those configs create (ESO's IRSA role) — not
-# arbitrary IAM in the account, and not infra/'s own state or resources.
+# Write access, narrowly scoped: the platform/ state object (not
+# infra/'s), and IAM role management restricted to roles platform/
+# creates (ESO's IRSA role) — not arbitrary IAM in the account, and not
+# infra/'s own state or resources.
 data "aws_iam_policy_document" "bastion_terraform_write" {
   statement {
     actions = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
     resources = [
-      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/gitops-project/platform-operators/*",
-      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/gitops-project/platform-config/*",
+      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/gitops-project/platform/*",
     ]
   }
 

@@ -59,3 +59,41 @@ resource "helm_release" "eso" {
     value = aws_iam_role.eso.arn
   }
 }
+
+# --- Tells ESO how to reach AWS Secrets Manager ---
+
+# Plain kubectl_manifest, same as root_app — the local_file/null_resource
+# retry-loop workaround this replaced was built while the real cause was
+# still misdiagnosed as a timing/discovery-cache race. The actual cause
+# was `v1beta1` vs `v1`: this CRD serves both, but only `v1` (the storage
+# version) ever worked — `v1beta1` failed 100% of the time, every
+# attempt, regardless of waits, retries, or separate apply processes.
+# Once that's fixed, there's no known reason kubectl_manifest wouldn't
+# work here the same way it already does for root_app.
+resource "kubectl_manifest" "cluster_secret_store" {
+  yaml_body = yamlencode({
+    apiVersion = "external-secrets.io/v1"
+    kind       = "ClusterSecretStore"
+    metadata = {
+      name = "aws-secrets-manager"
+    }
+    spec = {
+      provider = {
+        aws = {
+          service = "SecretsManager"
+          region  = var.aws_region
+          auth = {
+            jwt = {
+              serviceAccountRef = {
+                name      = "external-secrets"
+                namespace = "external-secrets"
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  depends_on = [helm_release.eso]
+}
