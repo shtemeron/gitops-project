@@ -73,6 +73,53 @@ resource "aws_iam_role_policy" "bastion_eks_describe" {
   policy = data.aws_iam_policy_document.bastion_eks_describe.json
 }
 
+# From Stage 3 on, `terraform apply` runs from the bastion against the same
+# state as everything else — refreshing that state means reading every
+# existing resource, not just the new ones this stage creates. Broad
+# read-only access (AWS managed ReadOnlyAccess) covers that refresh; actual
+# write/create permission stays narrowly scoped below, so a compromised
+# bastion can see the account but can't mutate anything outside its lane.
+resource "aws_iam_role_policy_attachment" "bastion_read_only" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+# Write access, narrowly scoped: the Terraform state object itself, and IAM
+# role management restricted to roles this project creates (e.g. Stage 3's
+# ESO IRSA role) — not arbitrary IAM in the account.
+data "aws_iam_policy_document" "bastion_terraform_write" {
+  statement {
+    actions = ["s3:GetObject", "s3:PutObject"]
+    resources = [
+      "arn:aws:s3:::gitops-project-tfstate-${data.aws_caller_identity.current.account_id}/*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"]
+  }
+}
+
+resource "aws_iam_role_policy" "bastion_terraform_write" {
+  name   = "${var.project_name}-bastion-terraform-write"
+  role   = aws_iam_role.bastion.id
+  policy = data.aws_iam_policy_document.bastion_terraform_write.json
+}
+
 resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project_name}-bastion"
   role = aws_iam_role.bastion.name
