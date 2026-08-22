@@ -133,6 +133,30 @@ resource "aws_iam_role_policy" "bastion_terraform_write" {
   policy = data.aws_iam_policy_document.bastion_terraform_write.json
 }
 
+# Push access, narrowly scoped to the one ECR repo this project has —
+# needed to build/push app images from the bastion (Stage 5) before CI
+# (Stage 10) exists to automate it. GetAuthorizationToken doesn't support
+# resource-level scoping (an ECR API limitation, not a shortcut) but is
+# already covered by the bastion's ReadOnlyAccess attachment above.
+data "aws_iam_policy_document" "bastion_ecr_push" {
+  statement {
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
+    ]
+    resources = [aws_ecr_repository.url_shortener.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "bastion_ecr_push" {
+  name   = "${var.project_name}-bastion-ecr-push"
+  role   = aws_iam_role.bastion.id
+  policy = data.aws_iam_policy_document.bastion_ecr_push.json
+}
+
 resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project_name}-bastion"
   role = aws_iam_role.bastion.name
