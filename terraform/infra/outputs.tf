@@ -33,3 +33,15 @@ output "bastion_ssh_command" {
 output "loki_bucket_name" {
   value = aws_s3_bucket.loki.id
 }
+
+output "route53_zone_id" {
+  value = aws_route53_zone.internal.zone_id
+}
+
+output "route53_zone_domain" {
+  value = aws_route53_zone.internal.name
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.url_shortener.repository_url
+}

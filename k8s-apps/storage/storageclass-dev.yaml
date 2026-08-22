@@ -1,0 +1,11 @@
+# dev: volumes get deleted along with their PVC — no need to protect data
+# that's expected to be thrown away and rebuilt repeatedly.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-dev
+provisioner: ebs.csi.aws.com
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3
