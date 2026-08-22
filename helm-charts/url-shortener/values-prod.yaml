@@ -1,0 +1,9 @@
+serviceAccountName: prod-workload
+
+app:
+  image:
+    tag: manual-2bb3809
+
+postgres:
+  storageClassName: gp3-prod
+  internalHostname: postgres-prod.gitops-project.internal

@@ -1,0 +1,15 @@
+# Headless (clusterIP: None) — gives the StatefulSet stable per-pod DNS,
+# and the external-dns annotation is what actually publishes the private
+# Route 53 name from Stage 1's confirmed interpretation #2.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgres
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.postgres.internalHostname }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Release.Name }}-postgres
+  ports:
+    - port: {{ .Values.postgres.port }}

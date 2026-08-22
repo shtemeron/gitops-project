@@ -1,0 +1,10 @@
+# Non-secret app config — deliberately separate from the ExternalSecret
+# below, per ARCHITECTURE.md's tech-mapping table.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  DB_HOST: {{ .Values.postgres.internalHostname | quote }}
+  DB_PORT: {{ .Values.postgres.port | quote }}
+  DB_NAME: {{ .Values.db.name | quote }}

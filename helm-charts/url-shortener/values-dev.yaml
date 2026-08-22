@@ -1,0 +1,9 @@
+serviceAccountName: dev-workload
+
+app:
+  image:
+    tag: manual-2bb3809
+
+postgres:
+  storageClassName: gp3-dev
+  internalHostname: postgres-dev.gitops-project.internal

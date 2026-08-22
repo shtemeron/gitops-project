@@ -1,0 +1,31 @@
+# Shared defaults — environment-specific values (image tag, StorageClass,
+# internal DNS hostname) live in values-dev.yaml / values-prod.yaml, not
+# here.
+
+app:
+  image:
+    repository: 100282333708.dkr.ecr.us-east-1.amazonaws.com/gitops-project
+  port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgres:
+  image: postgres:16-alpine
+  port: 5432
+  storageSize: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+db:
+  name: urlshortener
+  secretName: db-credentials
