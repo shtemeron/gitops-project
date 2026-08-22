@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prod-workload
+  namespace: prod
+subjects:
+  - kind: ServiceAccount
+    name: prod-workload
+    namespace: prod
+roleRef:
+  kind: Role
+  name: prod-workload
+  apiGroup: rbac.authorization.k8s.io

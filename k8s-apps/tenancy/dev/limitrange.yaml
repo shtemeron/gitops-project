@@ -1,0 +1,24 @@
+# Per-container default/min/max — the ResourceQuota above caps the
+# namespace in aggregate; this caps (and defaults) each container
+# individually, so one oversized container can't quietly eat the whole
+# namespace's quota by itself.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-limits
+  namespace: dev
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      default:
+        cpu: 500m
+        memory: 512Mi
+      min:
+        cpu: 50m
+        memory: 64Mi
+      max:
+        cpu: "1"
+        memory: 1Gi

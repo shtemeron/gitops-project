@@ -1,0 +1,15 @@
+# Aggregate ceiling for the whole namespace — roughly double dev's, since
+# prod is where real traffic eventually lands. Still a placeholder until
+# Stage 5's app exists and real usage can inform a tighter number.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: prod-quota
+  namespace: prod
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    pods: "20"

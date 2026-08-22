@@ -1,0 +1,13 @@
+# Least-privilege runtime identity for workloads in this namespace — read
+# access to what an app pod might reasonably need (its own config/secrets,
+# peer services/pods for discovery), nothing that can reach another
+# namespace, since this is a Role (namespace-scoped) not a ClusterRole.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prod-workload
+  namespace: prod
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
