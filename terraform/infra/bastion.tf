@@ -170,6 +170,13 @@ resource "aws_instance" "bastion" {
     ./aws/install --update
     rm -rf awscliv2.zip aws
 
+    # AL2023's own docker package, not Docker CE's separate repo — needed to
+    # build/push app images to ECR from here (Stage 5), since CI (Stage 10)
+    # doesn't exist yet to automate it.
+    dnf install -y docker
+    systemctl enable --now docker
+    usermod -a -G docker ec2-user
+
     sudo -u ec2-user aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.main.name}
   EOF
 
