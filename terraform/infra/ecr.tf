@@ -4,6 +4,11 @@
 resource "aws_ecr_repository" "url_shortener" {
   name                 = var.project_name
   image_tag_mutability = "IMMUTABLE"
+  # Without this, AWS rejects deleting a non-empty repository outright —
+  # `terraform destroy` would halt on this resource specifically rather
+  # than completing, undermining the repeated destroy/rebuild cycles
+  # this project is built around.
+  force_delete = true
 
   image_scanning_configuration {
     scan_on_push = true

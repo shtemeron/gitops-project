@@ -85,6 +85,23 @@ resource "aws_iam_role_policy_attachment" "eks_node_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# Default IMDS hop limit (1) blocks pods from reaching instance
+# metadata — they're an extra network hop away (pod netns -> host), and
+# IMDS silently drops requests exceeding the hop limit rather than
+# rejecting them, which shows up as a timeout, not a clear error. The
+# AWS Load Balancer Controller (and similar controllers) auto-discover
+# the VPC ID via IMDS from inside their own pod at startup — hit this
+# directly, confirmed via its own crash logs, not assumed in advance.
+resource "aws_launch_template" "node" {
+  name_prefix = "${var.project_name}-node-"
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+}
+
 # --- Node group: 2 desired nodes, private subnets only ---
 
 resource "aws_eks_node_group" "main" {
@@ -93,6 +110,11 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.eks_node.arn
   subnet_ids      = aws_subnet.private[*].id
   instance_types  = [var.node_instance_type]
+
+  launch_template {
+    id      = aws_launch_template.node.id
+    version = aws_launch_template.node.latest_version
+  }
 
   scaling_config {
     desired_size = var.node_desired_size
