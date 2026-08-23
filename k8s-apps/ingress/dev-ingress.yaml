@@ -1,0 +1,27 @@
+# Classic Ingress + ALB — deliberately different from prod's Gateway API,
+# both fronted by the same AWS Load Balancer Controller. See
+# ARCHITECTURE.md's tech-mapping table for why: demonstrates both the
+# legacy and current AWS LB Controller mechanisms side by side, mirroring
+# the prior project's own Ingress-vs-Gateway-API comparison exercise.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dev-app
+  namespace: dev
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:100282333708:certificate/a3ff61e8-0e92-4790-94f7-1d02b565d50e
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dev-app-app
+                port:
+                  number: 80

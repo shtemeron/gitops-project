@@ -1,0 +1,18 @@
+# Backend is prod-app-app: {{ .Release.Name }}-app from the chart's
+# service.yaml, and ArgoCD's Helm release name defaults to the
+# Application's own metadata.name ("prod-app").
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: prod-app
+  namespace: prod
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: prod-gateway
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: prod-app-app
+          port: 80

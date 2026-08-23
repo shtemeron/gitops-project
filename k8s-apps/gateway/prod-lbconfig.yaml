@@ -1,0 +1,14 @@
+# AWS's Gateway API implementation doesn't support the standard Gateway
+# API certificateRefs field for TLS — the cert ARN goes here instead, via
+# this AWS-specific CRD, referenced from the Gateway's
+# spec.infrastructure.parametersRef. Confirmed against
+# kubernetes-sigs/aws-load-balancer-controller's own docs, not assumed.
+apiVersion: gateway.k8s.aws/v1
+kind: LoadBalancerConfiguration
+metadata:
+  name: prod-gateway-lbconfig
+  namespace: prod
+spec:
+  listenerConfigurations:
+    - protocolPort: HTTPS:443
+      defaultCertificate: arn:aws:acm:us-east-1:100282333708:certificate/59607d38-0f92-4a91-abd0-abd0eb8a6eaf

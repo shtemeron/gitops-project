@@ -45,3 +45,11 @@ output "route53_zone_domain" {
 output "ecr_repository_url" {
   value = aws_ecr_repository.url_shortener.repository_url
 }
+
+output "dev_acm_certificate_arn" {
+  value = aws_acm_certificate.dev.arn
+}
+
+output "prod_acm_certificate_arn" {
+  value = aws_acm_certificate.prod.arn
+}
