@@ -70,5 +70,15 @@ resource "helm_release" "lb_controller" {
     value = aws_iam_role.lb_controller.arn
   }
 
+  # The chart creates its own default IngressClass named "alb" unless
+  # told not to — collides with the one we deliberately GitOps-manage
+  # ourselves (k8s-apps/ingress/ingressclass.yaml). Helm refuses to
+  # adopt an object it didn't create (no ownership labels), so this
+  # install fails outright without disabling the chart's own copy.
+  set {
+    name  = "createIngressClassResource"
+    value = "false"
+  }
+
   depends_on = [null_resource.gateway_api_crds]
 }

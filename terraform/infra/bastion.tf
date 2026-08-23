@@ -125,6 +125,25 @@ data "aws_iam_policy_document" "bastion_terraform_write" {
     ]
     resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"]
   }
+
+  # Standalone customer-managed policies (distinct resource type/ARN path
+  # from roles above) — needed for the LB Controller's IAM policy, the
+  # first IRSA setup in this project using a customer-managed policy
+  # object instead of an inline policy or an AWS-managed attachment.
+  statement {
+    actions = [
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:ListPolicyVersions",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicyVersion",
+      "iam:TagPolicy",
+      "iam:UntagPolicy",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.project_name}-*"]
+  }
 }
 
 resource "aws_iam_role_policy" "bastion_terraform_write" {
