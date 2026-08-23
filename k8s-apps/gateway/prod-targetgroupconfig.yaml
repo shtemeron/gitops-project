@@ -1,0 +1,17 @@
+# Gateway API has no equivalent to Ingress's alb.ingress.kubernetes.io/*
+# annotations — target-group-level settings (target type, health check)
+# go through this separate CRD instead, referenced from
+# LoadBalancerConfiguration. Confirmed against AWS's own docs, not
+# assumed: the controller's hardcoded default targetType is "instance",
+# which our plain ClusterIP Service (no NodePort) can't satisfy —
+# without this, the Gateway fails to build its model entirely.
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: prod-gateway-defaults
+  namespace: prod
+spec:
+  defaultConfiguration:
+    targetType: ip
+    healthCheckConfig:
+      healthCheckPath: /healthz

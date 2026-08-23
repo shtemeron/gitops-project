@@ -12,3 +12,5 @@ spec:
   listenerConfigurations:
     - protocolPort: HTTPS:443
       defaultCertificate: arn:aws:acm:us-east-1:100282333708:certificate/59607d38-0f92-4a91-abd0-abd0eb8a6eaf
+  defaultTargetGroupConfiguration:
+    name: prod-gateway-defaults
