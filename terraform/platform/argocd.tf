@@ -4,6 +4,13 @@ resource "helm_release" "argocd" {
   chart            = "argo-cd"
   namespace        = "argocd"
   create_namespace = true
+
+  # Same race as eso.tf: this chart creates its own Services
+  # (argocd-server, repo-server, etc.), which route through the LB
+  # Controller's cluster-wide Service-mutating webhook once installed.
+  # Depend on the controller finishing first so its webhook pod is
+  # already Ready.
+  depends_on = [helm_release.lb_controller]
 }
 
 # App-of-Apps root — the one manual/imperative apply in the whole system

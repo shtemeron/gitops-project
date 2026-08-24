@@ -58,6 +58,17 @@ resource "helm_release" "eso" {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.eso.arn
   }
+
+  # This chart creates its own Service (webhook/metrics), which any
+  # Service create/update in the cluster routes through the LB
+  # Controller's cluster-wide mutating webhook once that's installed.
+  # Without this, Terraform can apply both charts in parallel and hit a
+  # window where the webhook is registered but the controller's own pod
+  # isn't Ready yet — "no endpoints available for service
+  # aws-load-balancer-webhook-service". Forcing the controller to finish
+  # first (helm_release waits for pods to be Ready by default) closes
+  # that window.
+  depends_on = [helm_release.lb_controller]
 }
 
 # --- Tells ESO how to reach AWS Secrets Manager ---
