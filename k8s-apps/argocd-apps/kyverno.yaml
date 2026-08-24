@@ -2,8 +2,12 @@
 # via Terraform helm_release — unlike ArgoCD/ESO/external-dns/the LB
 # Controller, Kyverno isn't a prerequisite for GitOps itself to run, so
 # it belongs in git like everything else since Stage 4. Chart version
-# pinned against the real Helm repo index (kyverno.github.io/kyverno),
-# not guessed — 3.9.0 corresponds to appVersion v1.19.0.
+# pinned deliberately to 3.8.2 (appVersion v1.18.2), not the newer 3.9.0
+# — that one was published just 4 days before this stage was built and
+# hit a persistent OutOfSync diff on its newer CEL-based policy CRDs
+# (DeletingPolicy/GeneratingPolicy/ImageValidatingPolicy/MutatingPolicy/
+# ValidatingPolicy) even after a successful server-side-apply sync.
+# 3.8.2 had 6+ weeks of real-world use before 3.9.0 superseded it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -19,7 +23,7 @@ spec:
   source:
     repoURL: https://kyverno.github.io/kyverno/
     chart: kyverno
-    targetRevision: 3.9.0
+    targetRevision: 3.8.2
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
