@@ -1,0 +1,56 @@
+# Adapted from kyverno/policies' official require-pod-requests-limits:
+# scoped to dev/prod, Enforce not Audit. Deliberate defense-in-depth
+# alongside k8s-apps/tenancy/{dev,prod}/limitrange.yaml — LimitRange
+# silently injects a default if a container omits resources; this policy
+# instead requires the value be declared explicitly, so nothing is ever
+# silently defaulted without the author knowing.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-requests-limits
+  annotations:
+    policies.kyverno.io/title: Require Limits and Requests
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Validates that all containers have CPU/memory requests and memory
+      limits explicitly declared.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - dev
+                - prod
+      validate:
+        message: "CPU and memory resource requests and memory limits are required for containers."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"
+            =(initContainers):
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"
+            =(ephemeralContainers):
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"

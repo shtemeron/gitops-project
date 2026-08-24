@@ -1,0 +1,23 @@
+# Scoped to the app pod only (not postgres) - target-type: ip means the
+# ALB (health checks + real traffic) talks directly to pod IPs from its
+# own ENIs, which live in the public subnets (10.0.0.0/17, confirmed
+# against terraform/infra/vpc.tf) and aren't Kubernetes pods, so this has
+# to be an ipBlock rule, not a podSelector/namespaceSelector one.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-ingress
+  namespace: dev
+spec:
+  podSelector:
+    matchLabels:
+      app: dev-app-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/17
+      ports:
+        - protocol: TCP
+          port: 8080

@@ -14,6 +14,13 @@ spec:
         app: {{ .Release.Name }}-postgres
     spec:
       serviceAccountName: {{ .Values.serviceAccountName }}
+      securityContext:
+        # 70, not the common Debian-image 999 — confirmed against
+        # docker-library/postgres's own Dockerfile-alpine.template,
+        # which uses Alpine's standard postgres uid/gid.
+        runAsNonRoot: true
+        runAsUser: 70
+        fsGroup: 70
       containers:
         - name: postgres
           image: {{ .Values.postgres.image }}

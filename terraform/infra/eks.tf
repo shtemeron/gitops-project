@@ -137,6 +137,14 @@ resource "aws_eks_addon" "vpc_cni" {
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
   depends_on                  = [aws_eks_node_group.main]
+
+  # Off by default — confirmed against AWS's own docs, not assumed. The
+  # k8s-apps/tenancy/{dev,prod}/networkpolicy-*.yaml objects (Stage 7)
+  # would otherwise apply cleanly but enforce nothing at all: the VPC
+  # CNI doesn't run the eBPF network-policy agent without this.
+  configuration_values = jsonencode({
+    enableNetworkPolicy = "true"
+  })
 }
 
 resource "aws_eks_addon" "coredns" {

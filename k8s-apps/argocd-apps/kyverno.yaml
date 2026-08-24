@@ -1,0 +1,31 @@
+# The first platform-level operator installed the GitOps way instead of
+# via Terraform helm_release — unlike ArgoCD/ESO/external-dns/the LB
+# Controller, Kyverno isn't a prerequisite for GitOps itself to run, so
+# it belongs in git like everything else since Stage 4. Chart version
+# pinned against the real Helm repo index (kyverno.github.io/kyverno),
+# not guessed — 3.9.0 corresponds to appVersion v1.19.0.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno
+  namespace: argocd
+  annotations:
+    # Must finish (CRDs installed, chart Healthy) before kyverno-policies.yaml
+    # applies any ClusterPolicy — same class of CRD-vs-consumer race
+    # documented in ARCHITECTURE.md's Stage 3 postmortem.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://kyverno.github.io/kyverno/
+    chart: kyverno
+    targetRevision: 3.9.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

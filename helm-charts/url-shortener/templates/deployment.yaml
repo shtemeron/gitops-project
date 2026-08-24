@@ -13,6 +13,9 @@ spec:
         app: {{ .Release.Name }}-app
     spec:
       serviceAccountName: {{ .Values.serviceAccountName }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: app
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"

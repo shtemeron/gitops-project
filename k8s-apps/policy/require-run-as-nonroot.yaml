@@ -1,0 +1,58 @@
+# Adapted from kyverno/policies' official require-run-as-nonroot: scoped
+# to dev/prod only (not kube-system/argocd/kyverno/etc. — we don't
+# control third-party charts' security contexts) and Enforce, not the
+# upstream default of Audit, per Stage 7's "enforced from day one".
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-run-as-nonroot
+  annotations:
+    policies.kyverno.io/title: Require runAsNonRoot
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Containers must be required to run as non-root users. This policy
+      ensures runAsNonRoot is set to true.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - dev
+                - prod
+      validate:
+        message: >-
+          Running as root is not allowed. Either the field
+          spec.securityContext.runAsNonRoot must be set to `true`, or the
+          field spec.containers[*].securityContext.runAsNonRoot must be
+          set to `true`.
+        anyPattern:
+          - spec:
+              securityContext:
+                runAsNonRoot: "true"
+              =(ephemeralContainers):
+                - =(securityContext):
+                    =(runAsNonRoot): "true"
+              =(initContainers):
+                - =(securityContext):
+                    =(runAsNonRoot): "true"
+              containers:
+                - =(securityContext):
+                    =(runAsNonRoot): "true"
+          - spec:
+              =(ephemeralContainers):
+                - securityContext:
+                    runAsNonRoot: "true"
+              =(initContainers):
+                - securityContext:
+                    runAsNonRoot: "true"
+              containers:
+                - securityContext:
+                    runAsNonRoot: "true"

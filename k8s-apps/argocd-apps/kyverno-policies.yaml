@@ -1,0 +1,25 @@
+# Separate Application from kyverno.yaml: that one sources a remote
+# Helm chart (no room to mix in our own raw manifests), this one sources
+# a path in this repo. ClusterPolicy is cluster-scoped, so `destination.
+# namespace` here is nominal (Kyverno itself lives in `kyverno`).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-policies
+  namespace: argocd
+  annotations:
+    # Runs after kyverno.yaml (wave 0) — see that file's comment.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/shtemeron/gitops-project.git
+    targetRevision: main
+    path: k8s-apps/policy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

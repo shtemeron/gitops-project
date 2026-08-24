@@ -1,0 +1,21 @@
+# "Explicit allow within a namespace" from ARCHITECTURE.md's tech-mapping
+# table — any pod in this namespace may reach any other pod in this same
+# namespace (app -> postgres). Cross-namespace traffic (dev <-> prod) is
+# denied simply because no rule anywhere grants it — NetworkPolicy is
+# allow-list only, there's no separate "deny" object to write.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
