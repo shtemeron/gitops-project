@@ -2,7 +2,7 @@ serviceAccountName: prod-workload
 
 app:
   image:
-    tag: manual-2bb3809
+    tag: manual-03b4ac7
 
 postgres:
   storageClassName: gp3-prod
