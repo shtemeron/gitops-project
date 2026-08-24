@@ -29,3 +29,11 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Kyverno's ClusterPolicy/Policy/MutatingPolicy CRDs carry OpenAPI
+      # schemas large enough that ArgoCD's default client-side apply
+      # (which stores the whole manifest in a last-applied-configuration
+      # annotation) exceeds Kubernetes' 262144-byte annotation limit —
+      # confirmed live: 3 of 19 CRDs failed with exactly that error.
+      # Server-side apply tracks ownership via managedFields instead, no
+      # annotation involved, so the size limit never applies.
+      - ServerSideApply=true
