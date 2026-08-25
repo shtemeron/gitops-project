@@ -51,3 +51,18 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
 output "bucket_name" {
   value = aws_s3_bucket.tfstate.id
 }
+
+# Stage 8 — AWS-account-level, one-time prerequisite for launching ANY
+# EC2 Spot instance, discovered live: the first Spot launch in an
+# account normally auto-creates this service-linked role, but the
+# calling principal needs iam:CreateServiceLinkedRole to do so.
+# Karpenter's own controller role is deliberately scoped to only what
+# its official CloudFormation template grants — that permission isn't
+# in it, since AWS treats this as an account prerequisite, not
+# something a workload's own IAM role should self-provision. Belongs
+# here, not infra/ or platform/: it's account-wide, not cluster-scoped,
+# and (unlike everything in infra/) should never be destroyed as part
+# of a normal rebuild cycle — same category as the state bucket above.
+resource "aws_iam_service_linked_role" "spot" {
+  aws_service_name = "spot.amazonaws.com"
+}
