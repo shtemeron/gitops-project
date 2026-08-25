@@ -12,6 +12,17 @@
 # a real "nodepool requirements filtered out all available instance
 # types" scheduling failure, not assumed. Over-constraining for what's
 # meant to be a small, simple demo project.
+#
+# No instance-category filter either (dropped after ALSO hitting the
+# same "filtered out all available instance types" failure with it in
+# place, for completely unrelated pods, after subnets/security-groups/
+# AMIs/instance-profile were all independently confirmed healthy via
+# EC2NodeClass's own status) — whatever the exact right AWS category
+# values are, "t"/"c"/"m" weren't matching anything real. Not worth
+# reverse-engineering further for a project this size: capacity-type
+# and arch are the constraints that actually matter (Spot cost, and
+# matching the AMI's architecture), Karpenter already picks efficiently
+# within whatever's left based on the pod's real resource requests.
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
@@ -26,9 +37,6 @@ spec:
         - key: kubernetes.io/arch
           operator: In
           values: ["amd64"]
-        - key: karpenter.k8s.aws/instance-category
-          operator: In
-          values: ["t", "c", "m"]
       nodeClassRef:
         group: karpenter.k8s.aws
         kind: EC2NodeClass
