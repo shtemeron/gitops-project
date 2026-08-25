@@ -19,3 +19,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+  # HPA (Stage 8) owns replica count from here on — without this,
+  # selfHeal fights the HPA back to whatever the Deployment template
+  # says every time it reconciles. Documented ArgoCD pattern for any
+  # HPA-managed Deployment, not project-specific.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

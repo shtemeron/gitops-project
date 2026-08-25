@@ -53,3 +53,19 @@ output "dev_acm_certificate_arn" {
 output "prod_acm_certificate_arn" {
   value = aws_acm_certificate.prod.arn
 }
+
+output "karpenter_node_role_arn" {
+  value = aws_iam_role.eks_node.arn
+}
+
+output "karpenter_node_role_name" {
+  value = aws_iam_role.eks_node.name
+}
+
+output "karpenter_interruption_queue_name" {
+  value = aws_sqs_queue.karpenter_interruption.name
+}
+
+output "karpenter_interruption_queue_arn" {
+  value = aws_sqs_queue.karpenter_interruption.arn
+}

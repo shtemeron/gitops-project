@@ -6,6 +6,8 @@ app:
   image:
     repository: 100282333708.dkr.ecr.us-east-1.amazonaws.com/gitops-project
   port: 8080
+  hpa:
+    targetCPUUtilizationPercentage: 60
   resources:
     requests:
       cpu: 100m

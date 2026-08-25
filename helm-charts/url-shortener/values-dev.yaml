@@ -3,6 +3,9 @@ serviceAccountName: dev-workload
 app:
   image:
     tag: manual-233bf07
+  hpa:
+    minReplicas: 1
+    maxReplicas: 3
 
 postgres:
   storageClassName: gp3-dev

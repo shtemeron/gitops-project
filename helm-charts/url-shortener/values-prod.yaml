@@ -3,6 +3,9 @@ serviceAccountName: prod-workload
 app:
   image:
     tag: manual-233bf07
+  hpa:
+    minReplicas: 2
+    maxReplicas: 7
 
 postgres:
   storageClassName: gp3-prod

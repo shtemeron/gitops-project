@@ -3,7 +3,11 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-app
 spec:
-  replicas: 1
+  # No replicas field — HPA (Stage 8) owns this from creation onward.
+  # Kubernetes defaults an unspecified count to 1 on first create, same
+  # starting point as before, but nothing in this template ever fights
+  # the HPA back down after that (paired with ignoreDifferences on the
+  # dev-app/prod-app Applications, belt and suspenders).
   selector:
     matchLabels:
       app: {{ .Release.Name }}-app

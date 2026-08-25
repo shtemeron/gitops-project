@@ -206,6 +206,19 @@ resource "aws_eks_addon" "ebs_csi" {
   depends_on                  = [aws_eks_node_group.main]
 }
 
+# --- metrics-server (Stage 8) — HPA's data source. Not deployed by
+# default on EKS; available as a managed community add-on now, so it
+# fits the same pattern as the other add-ons above rather than a
+# separate Helm/manifest install ---
+
+resource "aws_eks_addon" "metrics_server" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "metrics-server"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+  depends_on                  = [aws_eks_node_group.main]
+}
+
 # --- Access entry: bastion's IAM role gets cluster-admin, since it's the only
 # place kubectl/helm/terraform can reach the private API endpoint from ---
 

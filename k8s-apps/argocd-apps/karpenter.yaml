@@ -1,0 +1,48 @@
+# Installed via ArgoCD, not Terraform — same reasoning as Kyverno
+# (Stage 7): Karpenter isn't a GitOps bootstrapping prerequisite, so it
+# belongs in git. Version pinned to v1.14.1, confirmed current via
+# GitHub's own releases API, not guessed. ServerSideApply=true baked in
+# from the start this time — Kyverno's chart taught us any Helm-chart-
+# installed CRD operator via ArgoCD risks the same 262144-byte
+# last-applied-configuration annotation limit.
+#
+# clusterName/interruptionQueue/role-arn are hardcoded here rather than
+# read dynamically — same deliberate tradeoff as the ACM ARNs in Stage 6
+# (k8s-apps/ is plain YAML, no Terraform templating available), and all
+# three are fully deterministic from this project's own naming
+# convention (var.project_name + the account ID), not values that
+# change on a rebuild.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karpenter
+  namespace: argocd
+  annotations:
+    # Must finish (CRDs installed, chart Healthy) before
+    # karpenter-config.yaml applies any NodePool/EC2NodeClass — same
+    # CRD-vs-consumer race documented in ARCHITECTURE.md's Stage 3/7
+    # postmortems.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: public.ecr.aws/karpenter
+    chart: karpenter
+    targetRevision: 1.14.1
+    helm:
+      parameters:
+        - name: settings.clusterName
+          value: gitops-project
+        - name: settings.interruptionQueue
+          value: gitops-project
+        - name: serviceAccount.annotations.eks\.amazonaws\.com/role-arn
+          value: arn:aws:iam::100282333708:role/gitops-project-karpenter
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

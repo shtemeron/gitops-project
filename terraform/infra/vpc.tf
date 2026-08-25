@@ -51,6 +51,10 @@ resource "aws_subnet" "private" {
     Name                                        = "${var.project_name}-private-${var.availability_zones[count.index]}"
     "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.project_name}" = "shared"
+    # Stage 8 — Karpenter's EC2NodeClass discovers subnets by this tag,
+    # deliberately explicit rather than reusing the ELB-role tag above
+    # (which happens to work but isn't semantically about Karpenter).
+    "karpenter.sh/discovery" = var.project_name
   }
 }
 

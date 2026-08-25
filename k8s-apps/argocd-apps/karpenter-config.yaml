@@ -1,0 +1,25 @@
+# Separate Application from karpenter.yaml, same reasoning as
+# kyverno-policies.yaml in Stage 7: that one sources a remote Helm
+# chart (no room to mix in our own raw manifests), this one sources a
+# path in this repo. Sync-wave 1 so it runs after karpenter.yaml's
+# wave-0 CRD install.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karpenter-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/shtemeron/gitops-project.git
+    targetRevision: main
+    path: k8s-apps/karpenter
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
