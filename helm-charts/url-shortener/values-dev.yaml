@@ -2,7 +2,7 @@ serviceAccountName: dev-workload
 
 app:
   image:
-    tag: manual-03b4ac7
+    tag: manual-233bf07
 
 postgres:
   storageClassName: gp3-dev
