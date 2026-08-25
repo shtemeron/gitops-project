@@ -11,6 +11,16 @@ metadata:
   name: default
 spec:
   amiFamily: AL2023
+  # Required as of Karpenter v1.x — amiFamily alone is no longer
+  # sufficient, confirmed against the real validation error rather than
+  # assumed ("spec.amiSelectorTerms: Required value"). @latest is
+  # Karpenter's own docs' explicit "not recommended for production"
+  # caveat (auto-replaces nodes on every new AMI release) — accepted
+  # deliberately here: this project has no real production traffic to
+  # protect against that churn, and pinning a specific AMI build would
+  # need manual upkeep with no real benefit for a portfolio project.
+  amiSelectorTerms:
+    - alias: al2023@latest
   role: gitops-project-eks-node
   subnetSelectorTerms:
     - tags:
