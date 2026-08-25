@@ -7,6 +7,30 @@ from flask import Flask, jsonify, redirect, request
 
 app = Flask(__name__)
 
+# Plain string, not a template file — this is a one-page manual test
+# harness for exercising /shorten + /<code> from a browser instead of
+# chaining two curl commands, nothing more.
+INDEX_HTML = """<!doctype html>
+<title>url-shortener test</title>
+<h1>url-shortener test</h1>
+<input id="url" size="60" placeholder="https://example.com" value="https://example.com">
+<button onclick="shorten()">Shorten</button>
+<p id="result"></p>
+<script>
+async function shorten() {
+  const res = await fetch("/shorten", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({url: document.getElementById("url").value})
+  });
+  const data = await res.json();
+  document.getElementById("result").innerHTML = res.ok
+    ? `short_code: <b>${data.short_code}</b> &mdash; <a href="/${data.short_code}" target="_blank">follow it</a>`
+    : `error: ${data.error}`;
+}
+</script>
+"""
+
 DB_CONFIG = {
     "host": os.environ["DB_HOST"],
     "port": os.environ.get("DB_PORT", "5432"),
@@ -38,6 +62,11 @@ def init_db():
 def generate_short_code(length=6):
     alphabet = string.ascii_letters + string.digits
     return "".join(random.choices(alphabet, k=length))
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return INDEX_HTML
 
 
 @app.route("/shorten", methods=["POST"])
