@@ -17,6 +17,6 @@ spec:
   scheme: internet-facing
   listenerConfigurations:
     - protocolPort: HTTPS:443
-      defaultCertificate: arn:aws:acm:us-east-1:100282333708:certificate/6cbd4561-689d-462c-a1de-ecf421eec541
+      defaultCertificate: arn:aws:acm:us-east-1:100282333708:certificate/1c303298-eeef-4233-84cf-6f412f5ba929
   defaultTargetGroupConfiguration:
     name: prod-gateway-defaults
