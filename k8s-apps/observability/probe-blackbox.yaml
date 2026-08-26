@@ -1,0 +1,32 @@
+# Continuous external-reachability check — Blackbox Exporter hits both
+# ALBs' real HTTPS /healthz endpoint from inside the cluster, on a
+# schedule, feeding the Grafana uptime panel + PrometheusRule alert.
+# This is the "continuous" half of the tech-mapping table's two-layer
+# connectivity verification (a CI post-deploy smoke test would be the
+# "immediate" half, once Stage 10 exists).
+#
+# TARGET URLS ARE PLACEHOLDERS — unlike the ACM ARNs/role ARNs
+# elsewhere in this directory, ALB DNS names are NOT deterministic
+# (AWS-generated per Ingress/Gateway, changes on every rebuild). Sync
+# these manually after Stage 6's Gateway/Ingress have real addresses:
+#   kubectl get gateway -n prod -o jsonpath='{.status.addresses[0].value}'
+#   kubectl get ingress -n dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: alb-uptime
+  namespace: observability
+spec:
+  jobName: blackbox-alb-uptime
+  interval: 30s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://k8s-dev-devapp-3a36b9c012-1948819981.us-east-1.elb.amazonaws.com/healthz
+        - https://k8s-prod-prodgate-bc1cf8fb93-376828619.us-east-1.elb.amazonaws.com/healthz
+      labels:
+        project: gitops-project

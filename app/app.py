@@ -1,11 +1,41 @@
 import os
 import string
 import random
+import time
 
 import psycopg2
-from flask import Flask, jsonify, redirect, request
+from flask import Flask, g, jsonify, redirect, request
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
 app = Flask(__name__)
+
+REQUEST_COUNT = Counter(
+    "app_requests_total", "Total HTTP requests", ["endpoint", "status"]
+)
+REQUEST_LATENCY = Histogram(
+    "app_request_latency_seconds", "Request latency in seconds", ["endpoint"]
+)
+
+
+@app.before_request
+def _start_timer():
+    g.start_time = time.time()
+
+
+@app.after_request
+def _record_metrics(response):
+    # request.endpoint is None for 404s on unmatched routes — nothing
+    # meaningful to label those with, so skip rather than lump them
+    # under a fake name. Also skip /metrics itself, or Prometheus's own
+    # scrapes show up as traffic in the app's own metrics.
+    if request.endpoint and request.endpoint != "metrics":
+        REQUEST_LATENCY.labels(endpoint=request.endpoint).observe(
+            time.time() - g.start_time
+        )
+        REQUEST_COUNT.labels(
+            endpoint=request.endpoint, status=response.status_code
+        ).inc()
+    return response
 
 # Plain string, not a template file — this is a one-page manual test
 # harness for exercising /shorten + /<code> from a browser instead of
@@ -120,6 +150,11 @@ def readyz():
     except psycopg2.OperationalError:
         return jsonify({"status": "db unreachable"}), 503
     return jsonify({"status": "ok"}), 200
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 
 init_db()

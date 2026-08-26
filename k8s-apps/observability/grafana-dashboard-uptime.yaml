@@ -1,0 +1,51 @@
+# grafana_dashboard: "1" is the standard label kube-prometheus-stack's
+# Grafana sidecar watches for cluster-wide to auto-load dashboards from
+# ConfigMaps — no manual import step. Three panels: the uptime proof
+# (Blackbox probe_success), and the two real app metrics added to
+# app.py this stage (request rate, p95 latency) — not just platform
+# metrics, which kube-state-metrics/node-exporter already provide for
+# free with zero app changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-uptime
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  uptime.json: |
+    {
+      "title": "URL Shortener - Uptime & App Metrics",
+      "schemaVersion": 39,
+      "timezone": "browser",
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Endpoint Uptime (Blackbox probe_success)",
+          "type": "stat",
+          "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
+          "targets": [
+            {"expr": "probe_success{job=\"blackbox-alb-uptime\"}", "legendFormat": "{{instance}}"}
+          ]
+        },
+        {
+          "id": 2,
+          "title": "App Request Rate (by endpoint)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+          "targets": [
+            {"expr": "sum(rate(app_requests_total[5m])) by (endpoint)", "legendFormat": "{{endpoint}}"}
+          ]
+        },
+        {
+          "id": 3,
+          "title": "App p95 Latency (by endpoint)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(app_request_latency_seconds_bucket[5m])) by (le, endpoint))", "legendFormat": "{{endpoint}}"}
+          ]
+        }
+      ]
+    }

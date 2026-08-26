@@ -1,0 +1,26 @@
+# Separate Application from observability.yaml, same reasoning as
+# kyverno-policies.yaml / karpenter-config.yaml: that one sources a
+# remote Helm chart (no room to mix in our own raw manifests), this one
+# sources a path in this repo. Sync-wave 1 so it runs after
+# observability.yaml's wave-0 CRD install (Prometheus/ServiceMonitor/
+# PrometheusRule/Probe all come from that chart).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/shtemeron/gitops-project.git
+    targetRevision: main
+    path: k8s-apps/observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

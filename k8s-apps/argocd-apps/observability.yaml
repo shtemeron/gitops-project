@@ -1,0 +1,51 @@
+# Installed via ArgoCD, not Terraform — same reasoning as Kyverno/
+# Karpenter: not a GitOps bootstrapping prerequisite. Version pinned to
+# 88.5.4 (appVersion v0.93.1), confirmed current via Artifact Hub, not
+# guessed. ServerSideApply=true from the start — this chart ships some
+# of the largest CRDs in the ecosystem (Prometheus/Alertmanager/
+# ServiceMonitor/PodMonitor/PrometheusRule/Probe), a strong candidate
+# for the same 262144-byte last-applied-configuration annotation limit
+# Kyverno hit in Stage 7.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+  annotations:
+    # Must finish (CRDs installed) before observability-config.yaml
+    # applies any ServiceMonitor/Probe/PrometheusRule — same CRD-vs-
+    # consumer race documented in ARCHITECTURE.md's Stage 3/7/8
+    # postmortems.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 88.5.4
+    helm:
+      parameters:
+        # Our own ServiceMonitor/PrometheusRule/Probe objects (applied
+        # by observability-config, a separate Application) never carry
+        # this chart's own Helm release label, so without this
+        # Prometheus would silently ignore them by default — documented
+        # chart behavior for "additional resources not deployed by this
+        # chart", not a workaround.
+        - name: prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues
+          value: "false"
+        - name: prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues
+          value: "false"
+        - name: prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues
+          value: "false"
+        - name: prometheus.prometheusSpec.probeSelectorNilUsesHelmValues
+          value: "false"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

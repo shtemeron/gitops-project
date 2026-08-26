@@ -1,0 +1,28 @@
+# Scrapes the app's own /metrics (Stage 9 addition to app.py —
+# request-count/latency, real app-level metrics, not just the platform
+# metrics kube-prometheus-stack already gets for free via
+# kube-state-metrics/node-exporter). One ServiceMonitor covering both
+# environments via namespaceSelector, rather than two near-identical
+# copies — the label selector (app=*-app-app) already matches both
+# dev-app-app and prod-app-app's Service labels.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: url-shortener
+  namespace: observability
+spec:
+  namespaceSelector:
+    matchNames:
+      - dev
+      - prod
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - dev-app-app
+          - prod-app-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

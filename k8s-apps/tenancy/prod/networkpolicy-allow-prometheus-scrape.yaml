@@ -1,0 +1,26 @@
+# Stage 9 — without this, default-deny-all silently blocks Prometheus
+# (in the separate "observability" namespace) from ever reaching the
+# app's /metrics at all: neither allow-intra-namespace (same namespace
+# only) nor allow-alb-ingress (public-subnet CIDR only) covers
+# cross-namespace scrape traffic. kubernetes.io/metadata.name is the
+# automatic, API-server-assigned label every namespace carries — same
+# pattern already used in networkpolicy-allow-dns.yaml for kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: prod-app-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 8080

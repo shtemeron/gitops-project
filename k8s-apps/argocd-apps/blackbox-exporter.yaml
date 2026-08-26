@@ -1,0 +1,43 @@
+# Installed via ArgoCD, not Terraform — same reasoning as
+# observability.yaml. Version pinned to 11.17.2 (appVersion v0.28.0),
+# confirmed current via Artifact Hub. The actual probe targets live in
+# observability-config's Probe CRD (k8s-apps/observability/
+# probe-blackbox.yaml), which references this exporter's Service
+# directly — service name confirmed against the chart's own
+# _helpers.tpl fullname logic (release name "blackbox-exporter" doesn't
+# contain the chart name, so it becomes
+# "blackbox-exporter-prometheus-blackbox-exporter"), not guessed.
+#
+# insecure_skip_verify here is required — both ALB endpoints use
+# self-signed certs (Stage 6), same tradeoff as every `curl -k` in this
+# project.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blackbox-exporter
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-blackbox-exporter
+    targetRevision: 11.17.2
+    helm:
+      values: |
+        config:
+          modules:
+            http_2xx:
+              prober: http
+              http:
+                tls_config:
+                  insecure_skip_verify: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
