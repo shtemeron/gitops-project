@@ -29,6 +29,15 @@ spec:
           value: s3
         - name: loki.storage.bucketNames.chunks
           value: gitops-project-loki-100282333708
+        # SingleBinary's statefulset template hard-requires this even
+        # though the ruler component itself isn't enabled/used here —
+        # confirmed via the real "Please define
+        # loki.storage.bucketNames.ruler" template error, not assumed
+        # from docs (which only mention chunks + an admin bucket for
+        # GEL). Reusing the same bucket — no new AWS resource needed,
+        # S3 buckets hold logically-separate prefixes fine.
+        - name: loki.storage.bucketNames.ruler
+          value: gitops-project-loki-100282333708
         - name: loki.storage.s3.region
           value: us-east-1
         - name: serviceAccount.name
