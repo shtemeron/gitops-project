@@ -2,7 +2,7 @@ serviceAccountName: dev-workload
 
 app:
   image:
-    tag: manual-233bf07
+    tag: manual-b0138a4
   hpa:
     minReplicas: 1
     maxReplicas: 3
