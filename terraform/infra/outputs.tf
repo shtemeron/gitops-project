@@ -30,10 +30,6 @@ output "bastion_ssh_command" {
   value = "ssh -i ~/.ssh/gitops-project-bastion ec2-user@${aws_instance.bastion.public_ip}"
 }
 
-output "loki_bucket_name" {
-  value = aws_s3_bucket.loki.id
-}
-
 output "route53_zone_id" {
   value = aws_route53_zone.internal.zone_id
 }
