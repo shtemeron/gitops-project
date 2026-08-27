@@ -77,7 +77,8 @@ jobs:
           ref: main
 
       - name: Update dev image tag
-        run: sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-dev.yaml
+        run: |
+          sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-dev.yaml
 
       - name: Commit and push
         run: |
@@ -103,7 +104,8 @@ jobs:
           ref: main
 
       - name: Update prod image tag
-        run: sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-prod.yaml
+        run: |
+          sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-prod.yaml
 
       - name: Commit and push
         run: |
