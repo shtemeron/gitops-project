@@ -1,0 +1,114 @@
+name: CI/CD
+
+# Scoped to app/** specifically — the deploy jobs below commit back into
+# helm-charts/, and without this scoping that commit would re-trigger
+# this same workflow, an infinite loop.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+
+# id-token: write - required for the OIDC AssumeRoleWithWebIdentity call
+# to AWS (no static access keys anywhere in this pipeline).
+# contents: write - required to commit the image-tag bump back into
+# helm-charts/, using GitHub's own auto-issued, run-scoped token, not a
+# standing PAT.
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: gitops-project
+
+jobs:
+  build-scan-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::100282333708:role/gitops-project-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: docker build -t $ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }} app/
+
+      # Gates the pipeline — a CRITICAL finding stops the job before the
+      # push step below ever runs. CRITICAL-only (not +HIGH): base-image
+      # OS package CVEs at HIGH severity are common and often not
+      # practically fixable without upstream action; gating on those too
+      # risks a demo pipeline that's frequently and unfixably red.
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Tag and push to ECR
+        run: |
+          docker tag $ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }} \
+            ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }}
+          docker push ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }}
+
+  deploy-dev:
+    needs: build-scan-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update dev image tag
+        run: sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-dev.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm-charts/url-shortener/values-dev.yaml
+          git commit -m "Deploy ${{ needs.build-scan-push.outputs.image_tag }} to dev [skip ci]"
+          git push
+
+  # Gated by the "production" GitHub Environment's required-reviewers
+  # protection rule — a one-time manual setup step in the repo's own
+  # Settings > Environments, not something this workflow or Terraform
+  # configures. Without that rule configured, this job runs immediately
+  # with no gate at all.
+  deploy-prod:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update prod image tag
+        run: sed -i "s/tag: .*/tag: ${{ needs.build-scan-push.outputs.image_tag }}/" helm-charts/url-shortener/values-prod.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm-charts/url-shortener/values-prod.yaml
+          git commit -m "Promote ${{ needs.build-scan-push.outputs.image_tag }} to prod [skip ci]"
+          git push
