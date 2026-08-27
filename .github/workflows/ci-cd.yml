@@ -3,11 +3,17 @@ name: CI/CD
 # Scoped to app/** specifically — the deploy jobs below commit back into
 # helm-charts/, and without this scoping that commit would re-trigger
 # this same workflow, an infinite loop.
+#
+# workflow_dispatch exists for the case a `push` trigger can't cover:
+# after a full infra/ destroy-and-rebuild, the ECR repo is completely
+# empty and there's no new app/ code change to fire the push trigger —
+# needs a manual "build from what's already in git" run.
 on:
   push:
     branches: [main]
     paths:
       - "app/**"
+  workflow_dispatch: {}
 
 # id-token: write - required for the OIDC AssumeRoleWithWebIdentity call
 # to AWS (no static access keys anywhere in this pipeline).
