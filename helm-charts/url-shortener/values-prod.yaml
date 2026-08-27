@@ -2,7 +2,7 @@ serviceAccountName: prod-workload
 
 app:
   image:
-    tag: manual-48fe847
+    tag: 
   hpa:
     minReplicas: 2
     maxReplicas: 7
