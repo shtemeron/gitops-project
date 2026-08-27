@@ -194,10 +194,17 @@ app/           the Flask app itself
 ## What this is (and isn't)
 
 This is a deliberately-built learning and portfolio project. Several
-choices reflect that honestly rather than pretending otherwise: a
-self-signed certificate instead of a real CA (no owned domain), a
-single shared NAT Gateway instead of one per AZ (no real traffic to
-protect against an AZ outage), no notification channel wired to the
-uptime alert (the alert firing and clearing is the proof; no Slack
-integration). Every one of these is a named, deliberate tradeoff, not
-an oversight.
+choices reflect that honestly rather than pretending otherwise:
+
+- A self-signed certificate instead of a real CA (no owned domain).
+- A single shared NAT Gateway instead of one per AZ (no real traffic to
+  protect against an AZ outage).
+- No AWS PrivateLink/VPC interface endpoints for ECR, STS, Secrets
+  Manager, or EC2 — that traffic goes out through the NAT Gateway over
+  the public internet instead. Each interface endpoint carries its own
+  hourly charge, not worth it for a demo project with no real traffic
+  to keep off the public path.
+- No notification channel wired to the uptime alert — the alert firing
+  and clearing is the proof; no Slack/email integration.
+
+Every one of these is a named, deliberate tradeoff, not an oversight.
