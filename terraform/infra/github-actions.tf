@@ -27,7 +27,13 @@ data "aws_iam_policy_document" "github_actions_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:shtemeron/gitops-project:ref:refs/heads/main"]
+      # GitHub's current default OIDC subject format includes immutable
+      # numeric IDs alongside the names (repo/owner renames can't ever
+      # invalidate or hijack this trust relationship) — confirmed
+      # directly from a real decoded token for this repo, not assumed
+      # from GitHub's older, simpler documented format
+      # ("repo:owner/repo:ref:..."), which no longer matches reality.
+      values = ["repo:shtemeron@51164085/gitops-project@1338349254:ref:refs/heads/main"]
     }
     condition {
       test     = "StringEquals"

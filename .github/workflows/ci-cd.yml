@@ -35,15 +35,6 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Temporary diagnostic step — prints the real OIDC token's actual
-      # sub/aud claims for this run, since the trust policy's sub
-      # condition looks correct on paper but assume-role keeps failing.
-      # Remove once the mismatch is found and fixed.
-      - name: Debug OIDC token
-        run: |
-          IDTOKEN=$(curl -sLS "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" -H "User-Agent: actions/oidc-client" -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" | jq -r '.value')
-          echo "$IDTOKEN" | cut -d "." -f2 | base64 -d 2>/dev/null | jq .
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
