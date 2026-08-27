@@ -26,7 +26,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - https://k8s-dev-devapp-3a36b9c012-1948819981.us-east-1.elb.amazonaws.com/healthz
-        - https://k8s-prod-prodgate-bc1cf8fb93-376828619.us-east-1.elb.amazonaws.com/healthz
+        - https://k8s-dev-devapp-3a36b9c012-1751879578.us-east-1.elb.amazonaws.com/healthz
+        - https://k8s-prod-prodgate-9c6616441b-31036425.us-east-1.elb.amazonaws.com/healthz
       labels:
         project: gitops-project
