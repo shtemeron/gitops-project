@@ -54,7 +54,7 @@ jobs:
       # practically fixable without upstream action; gating on those too
       # risks a demo pipeline that's frequently and unfixably red.
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
           severity: CRITICAL
