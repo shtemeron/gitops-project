@@ -12,7 +12,7 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:100282333708:certificate/d648aeeb-857b-407a-ba38-ced1c8b34b5a
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:100282333708:certificate/844cc37d-7d31-4ad2-944f-a49b9c4925de
     # Default health check path is "/", which this app doesn't handle at
     # all (only /shorten, /<code>, /healthz, /readyz) — would 404 and
     # mark the target unhealthy even with target-type correctly set.
