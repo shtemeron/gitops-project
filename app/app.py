@@ -16,6 +16,7 @@ REQUEST_LATENCY = Histogram(
     "app_request_latency_seconds", "Request latency in seconds", ["endpoint"]
 )
 
+# added by me to trigger ci-cd
 
 @app.before_request
 def _start_timer():
