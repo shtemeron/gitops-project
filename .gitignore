@@ -1,5 +1,6 @@
 *.md
 !README.md
+!INSTRUCTIONS.md
 
 # Terraform local artifacts — never the provider cache or local plan/state
 .terraform/
