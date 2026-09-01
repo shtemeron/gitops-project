@@ -1,4 +1,4 @@
-# gitops-project
+## gitops-project
 
 A URL-shortener API running on **Amazon EKS**, deployed and operated
 entirely through GitOps — two isolated environments (`dev`/`prod`)
