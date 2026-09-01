@@ -46,7 +46,6 @@ flowchart TB
     ALB2 --> ProdNS
     DevNS -.->|pulls image| ECR
     ProdNS -.->|pulls image| ECR
-```
 
 CI/CD never touches the cluster directly — it stops at "git now reflects
 the new image tag." Deployment is entirely ArgoCD's job, polling the repo
